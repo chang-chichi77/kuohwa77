@@ -1,0 +1,20 @@
+bases:
+- ../../base
+
+configMapGenerator:
+  - name: global-env
+    behavior: merge
+    literals:
+      - "LOG_LEVEL=DEBUG"
+
+images:
+- name: asia.gcr.io/airs-develop/base
+  newTag: develop
+
+resources:
+- debug.yaml
+- oracledb.yaml
+- rwx-example.yaml
+
+patches:
+- storage.yaml

@@ -1,0 +1,9 @@
+/.env
+/.idea
+/.gcloudignore
+/.dockerignore
+/Dockerfile
+/cloudbuild.yaml
+__pycache__/
+*.py[cod]
+*$py.class

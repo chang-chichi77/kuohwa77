@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+  namespace: kuohwa
+imagePullSecrets:
+- name: gcr-json-key
+secrets:
+- name: default-token-9lxjm

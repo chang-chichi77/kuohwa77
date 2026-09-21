@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage
+spec:
+  # hardcode a cluster ip for the service
+  # so that on delete & recreate of the service the previous pv's still point
+  # to this nfs-provisioner, pick a new ip for each new nfs provisioner
+  clusterIP: 10.96.112.111

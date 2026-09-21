@@ -1,0 +1,13 @@
+namespace: kuohwa
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+  - name: global-env
+    literals:
+      - "LOG_LEVEL=DEBUG"
+      - "LOG_FORMAT='%(asctime)s %(levelname)s %(name)s: %(message)s'"
+
+resources:
+- storage.yaml

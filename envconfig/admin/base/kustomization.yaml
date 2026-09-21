@@ -1,0 +1,5 @@
+resources:
+- cluster-role.yaml
+- kuohwa.yaml
+- metric-server.yaml
+- longhorn.yaml

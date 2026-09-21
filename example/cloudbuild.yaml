@@ -1,0 +1,11 @@
+substitutions:
+  # _COMPONENT: 'example'  # replaced from ci/cd
+  _VERSION: '0.0.9'
+steps:
+- name: gcr.io/cloud-builders/docker
+  entrypoint: 'bash'
+  args: ['-c', 'docker pull asia.gcr.io/$PROJECT_ID/$_COMPONENT:latest || exit 0']
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', 'asia.gcr.io/$PROJECT_ID/$_COMPONENT:$COMMIT_SHA', '-t', 'asia.gcr.io/$PROJECT_ID/$_COMPONENT:$_VERSION', '-t', 'asia.gcr.io/$PROJECT_ID/$_COMPONENT:latest', '--cache-from', 'asia.gcr.io/$PROJECT_ID/$_COMPONENT:latest', '--build-arg', 'PROJECT_ID', '.']
+timeout: 1800s
+images: ['asia.gcr.io/$PROJECT_ID/$_COMPONENT:$COMMIT_SHA', 'asia.gcr.io/$PROJECT_ID/$_COMPONENT:$_VERSION', 'asia.gcr.io/$PROJECT_ID/$_COMPONENT:latest']

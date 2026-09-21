@@ -1,0 +1,9 @@
+bases:
+- ../../base
+
+resources:
+- gcr_json_key.yaml
+
+patches:
+- longhorn.yaml
+- kuohwa.yaml
