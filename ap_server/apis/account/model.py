@@ -29,10 +29,10 @@ get_account_list_output = api.clone(u'獲得帳號列表輸出', base_input_payl
 
 ################# 3. 新增帳號 #################
 add_account_input = api.model(u'新增帳號輸入', {
-    'user_id': fields.String(required=True, description=u"用戶ID", example="john_doe"),
+    'user_id': fields.String(required=True, description=u"用戶ID", example="chichi"),
     'role': fields.List(fields.String(), required=True, description=u"角色列表 (只能是 Admin, Super User, General User)", example=["Admin"]),
-    'email': fields.String(required=True, description=u"信箱 (必須以 @gmail.com 結尾)", example="john123@gmail.com"),
-    'password': fields.String(required=True, description=u"密碼", example="SecurePassword123")
+    'email': fields.String(required=True, description=u"信箱 (必須以 @gmail.com 結尾)", example="jolin20060131@gmail.com"),
+    'password': fields.String(required=True, description=u"密碼", example="apple777")
 })
 
 add_account_output = base_input_payload
