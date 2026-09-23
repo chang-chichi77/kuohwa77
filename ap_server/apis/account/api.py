@@ -2,6 +2,7 @@ from apis.account.model import *
 from apis.account.module import *
 from flask import session, request
 from base_api import CustomResource
+from werkzeug.exceptions import BadRequest
 import json
 
 ROLE_ADMIN = "Admin"
@@ -52,16 +53,22 @@ class GetAccountList(CustomResource):
 @api.route("/add")
 class AddAccount(CustomResource):
     @api.expect(add_account_input)
-    @api.marshal_with(add_account_output)
     def post(self):
         """新增帳號"""
-        data=get_json_data()
-        return Account.add_account(
-            user_id=data.get('user_id'),
-            role=data.get('role', []),
-            email=data.get('email'),
-            password=data.get('password')
-        )
+        try:
+            data=get_json_data()
+            result = Account.add_account(
+                user_id=data.get('user_id'),
+                role=data.get('role', []),
+                email=data.get('email'),
+                password=data.get('password')
+            )
+            return result, 200
+        except BadRequest as e:
+            return {
+                'result': 1,
+                'message': str(e.description)
+            }, 400
 
 ################# 4. 更新帳號 #################
 @api.route("/update")

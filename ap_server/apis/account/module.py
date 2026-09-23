@@ -5,6 +5,7 @@ import string
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from werkzeug.exceptions import BadRequest
 
 # 1. 替換為 MySQL 工具
 from utils.mysql_utils import MysqlAccess
@@ -113,30 +114,18 @@ class Account(object):
             if isinstance(role, list):
                 for r in role:
                     if r not in valid_roles:
-                        return {
-                            'result': 1,
-                            'message': f'角色 {r} 無效，只能是 {", ".join(valid_roles)}'
-                        }
+                        raise BadRequest(f'角色 {r} 無效，只能是 {", ".join(valid_roles)}')
             else:
                 if role not in valid_roles:
-                    return {
-                        'result': 1,
-                        'message': f'角色 {role} 無效，只能是 {", ".join(valid_roles)}'
-                    }
+                    raise BadRequest(f'角色 {role} 無效，只能是 {", ".join(valid_roles)}')
 
             # 驗證 email
             if not email or not email.endswith('@gmail.com'):
-                return {
-                    'result': 1,
-                    'message': '信箱必須以 @gmail.com 結尾 (例如: 111@gmail.com)'
-                }
+                raise BadRequest('信箱必須以 @gmail.com 結尾 (例如: 111@gmail.com)')
 
             # 驗證 password
             if not password:
-                return {
-                    'result': 1,
-                    'message': '密碼不能為空'
-                }
+                raise BadRequest('密碼不能為空')
 
             role_str = json.dumps(role) if isinstance(role, list) else json.dumps([role])
 
@@ -150,6 +139,8 @@ class Account(object):
                 'result': 0,
                 'message': ''
             }
+        except BadRequest:
+            raise
         except Exception as e:
             return {
                 'result': 1,
