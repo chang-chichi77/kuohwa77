@@ -55,11 +55,12 @@ class AddAccount(CustomResource):
     @api.marshal_with(add_account_output)
     def post(self):
         """新增帳號"""
-        data = get_json_data()
+        data=get_json_data()
         return Account.add_account(
             user_id=data.get('user_id'),
             role=data.get('role', []),
-            email=data.get('email')
+            email=data.get('email'),
+            password=data.get('password')
         )
 
 ################# 4. 更新帳號 #################

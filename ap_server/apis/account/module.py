@@ -100,18 +100,51 @@ class Account(object):
                 'data': []
             }
 
-    ############# 2. 新增帳號 ##############
+#======================================================================
+#==========                    2.新增帳號                     ==========
+#======================================================================
+
     @staticmethod
-    def add_account(user_id, role, email):
+    def add_account(user_id, role, email, password):
         """新增帳號"""
         try:
+            # 驗證 role
+            valid_roles = ["Admin", "Super User", "General User"]
+            if isinstance(role, list):
+                for r in role:
+                    if r not in valid_roles:
+                        return {
+                            'result': 1,
+                            'message': f'角色 {r} 無效，只能是 {", ".join(valid_roles)}'
+                        }
+            else:
+                if role not in valid_roles:
+                    return {
+                        'result': 1,
+                        'message': f'角色 {role} 無效，只能是 {", ".join(valid_roles)}'
+                    }
+
+            # 驗證 email
+            if not email or not email.endswith('@gmail.com'):
+                return {
+                    'result': 1,
+                    'message': '信箱必須以 @gmail.com 結尾 (例如: 111@gmail.com)'
+                }
+
+            # 驗證 password
+            if not password:
+                return {
+                    'result': 1,
+                    'message': '密碼不能為空'
+                }
+
             role_str = json.dumps(role) if isinstance(role, list) else json.dumps([role])
 
             sql = """
-                INSERT INTO TBL_USER_ACCOUNT (USER_ID, ROLE, EMAIL, UPDATE_TIME)
-                VALUES (%s, %s, %s, NOW())
+                INSERT INTO TBL_USER_ACCOUNT (USER_ID, ROLE, EMAIL, PASSWORD, UPDATE_TIME)
+                VALUES (%s, %s, %s, %s, NOW())
             """
-            MysqlAccess.execute(sql, [user_id, role_str, email])
+            MysqlAccess.execute(sql, [user_id, role_str, email, password])
 
             return {
                 'result': 0,
@@ -212,7 +245,7 @@ class Account(object):
                 return {
                     'result': 1,
                     'message': f'找不到信箱 {email} 對應的帳號'
-                }
+              }
 
             temp_password = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
 
