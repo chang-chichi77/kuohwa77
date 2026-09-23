@@ -109,19 +109,31 @@ class Account(object):
     def add_account(user_id, role, email, password):
         """新增帳號"""
         try:
+            # ===== 第一階段：驗證必填欄位 =====
             # 驗證 user_id
             if not user_id:
                 raise BadRequest('user_id 為必填欄位')
-
-            check_sql = "SELECT USER_ID FROM TBL_USER_ACCOUNT WHERE USER_ID = %s"
-            check_result = MysqlAccess.query(check_sql, [user_id])
-            if check_result:
-                raise BadRequest(f'user_id "{user_id}" 已存在，無法重複新增')
 
             # 驗證 role
             if not role or (isinstance(role, list) and len(role) == 0) or (isinstance(role, list) and all(not r for r in role)):
                 raise BadRequest('role 為必填欄位，只能是 Admin, Super User, General User')
 
+            # 驗證 email
+            if not email:
+                raise BadRequest('email 為必填欄位')
+
+            # 驗證 password
+            if not password:
+                raise BadRequest('密碼不能為空')
+
+            # ===== 第二階段：驗證邏輯 (重複性等) =====
+            check_sql = "SELECT USER_ID FROM TBL_USER_ACCOUNT WHERE USER_ID = %s"
+            check_result = MysqlAccess.query(check_sql, [user_id])
+            if check_result:
+                raise BadRequest(f'user_id "{user_id}" 已存在，無法重複新增')
+
+            # ===== 第三階段：驗證內容格式 =====
+            # 驗證 role 內容
             valid_roles = ["Admin", "Super User", "General User"]
             if isinstance(role, list):
                 for r in role:
@@ -131,10 +143,8 @@ class Account(object):
                 if role not in valid_roles:
                     raise BadRequest(f'角色 "{role}" 無效，只能是 Admin, Super User, General User')
 
-            # 驗證 email
-            if not email:
-                raise BadRequest('email 為必填欄位')
-            elif not email.endswith('@gmail.com'):
+            # 驗證 email 格式
+            if not email.endswith('@gmail.com'):
                 if '@' in email:
                     domain = email.split('@')[1] if len(email.split('@')) > 1 else ''
                     raise BadRequest(f'email 格式錯誤，您輸入的是 @{domain}，只接受 @gmail.com')
@@ -142,10 +152,6 @@ class Account(object):
                     raise BadRequest('email 缺少 @gmail.com，請輸入完整的 email (例如: chichi@gmail.com)')
             elif email == '@gmail.com' or not email.split('@')[0]:
                 raise BadRequest('email 格式錯誤，@ 前面必須至少有一個字符 (例如: chichi@gmail.com)')
-
-            # 驗證 password
-            if not password:
-                raise BadRequest('密碼不能為空')
 
             role_str = json.dumps(role) if isinstance(role, list) else json.dumps([role])
 
