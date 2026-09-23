@@ -140,6 +140,8 @@ class Account(object):
                     raise BadRequest(f'email 格式錯誤，您輸入的是 @{domain}，只接受 @gmail.com')
                 else:
                     raise BadRequest('email 缺少 @gmail.com，請輸入完整的 email (例如: chichi@gmail.com)')
+            elif email == '@gmail.com' or not email.split('@')[0]:
+                raise BadRequest('email 格式錯誤，@ 前面必須至少有一個字符 (例如: chichi@gmail.com)')
 
             # 驗證 password
             if not password:
