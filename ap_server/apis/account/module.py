@@ -119,14 +119,17 @@ class Account(object):
                 raise BadRequest(f'user_id "{user_id}" 已存在，無法重複新增')
 
             # 驗證 role
+            if not role or (isinstance(role, list) and len(role) == 0) or (isinstance(role, list) and all(not r for r in role)):
+                raise BadRequest('role 為必填欄位，只能是 Admin, Super User, General User')
+
             valid_roles = ["Admin", "Super User", "General User"]
             if isinstance(role, list):
                 for r in role:
-                    if r not in valid_roles:
-                        raise BadRequest(f'角色 {r} 無效，只能是 {", ".join(valid_roles)}')
+                    if r and r not in valid_roles:
+                        raise BadRequest(f'角色 "{r}" 無效，只能是 Admin, Super User, General User')
             else:
                 if role not in valid_roles:
-                    raise BadRequest(f'角色 {role} 無效，只能是 {", ".join(valid_roles)}')
+                    raise BadRequest(f'角色 "{role}" 無效，只能是 Admin, Super User, General User')
 
             # 驗證 email
             if not email:
