@@ -23,7 +23,7 @@ class Account(object):
 
             if raw and len(raw) > 0:
                 row = raw[0]
-                role_val = row.get('role')
+                role_val = row.get('role') or row.get('ROLE')
                 try:
                     role_list = json.loads(role_val) if isinstance(role_val, str) else role_val
                     if not isinstance(role_list, list):
@@ -71,7 +71,8 @@ class Account(object):
             data = []
             if raw:
                 for row in raw:
-                    role_val = row.get('role')
+                    # 处理大小写不同的字段名
+                    role_val = row.get('role') or row.get('ROLE')
                     if role_val:
                         try:
                             role_list = json.loads(role_val) if isinstance(role_val, str) else role_val
@@ -143,11 +144,6 @@ class Account(object):
                 if role not in valid_roles:
                     raise BadRequest(f'角色 "{role}" 無效，只能是 Admin, Super User, General User')
 
-            # 驗證 role JSON 字符串長度（數據庫限制 varchar(39)）
-            role_json = json.dumps(role) if isinstance(role, list) else json.dumps([role])
-            if len(role_json) > 39:
-                raise BadRequest(f'角色數量或名稱過長。您輸入的 JSON 字符串長度為 {len(role_json)}, 超過限制 (最多 39 字符)。請減少角色數量或聯繫系統管理員')
-
             # 驗證 email 格式
             if not email.endswith('@gmail.com'):
                 if '@' in email:
@@ -158,6 +154,7 @@ class Account(object):
             elif email == '@gmail.com' or not email.split('@')[0]:
                 raise BadRequest('email 格式錯誤，@ 前面必須至少有一個字符 (例如: chichi@gmail.com)')
 
+            # 角色转换为 JSON 字符串
             role_str = json.dumps(role) if isinstance(role, list) else json.dumps([role])
 
             sql = """
