@@ -120,8 +120,14 @@ class Account(object):
                     raise BadRequest(f'角色 {role} 無效，只能是 {", ".join(valid_roles)}')
 
             # 驗證 email
-            if not email or not email.endswith('@gmail.com'):
-                raise BadRequest('信箱必須以 @gmail.com 結尾 (例如: 111@gmail.com)')
+            if not email:
+                raise BadRequest('email 為必填欄位')
+            elif not email.endswith('@gmail.com'):
+                if '@' in email:
+                    domain = email.split('@')[1] if len(email.split('@')) > 1 else ''
+                    raise BadRequest(f'email 格式錯誤，您輸入的是 @{domain}，只接受 @gmail.com')
+                else:
+                    raise BadRequest('email 缺少 @gmail.com，請輸入完整的 email (例如: chichi@gmail.com)')
 
             # 驗證 password
             if not password:
