@@ -109,6 +109,15 @@ class Account(object):
     def add_account(user_id, role, email, password):
         """新增帳號"""
         try:
+            # 驗證 user_id
+            if not user_id:
+                raise BadRequest('user_id 為必填欄位')
+
+            check_sql = "SELECT USER_ID FROM TBL_USER_ACCOUNT WHERE USER_ID = %s"
+            check_result = MysqlAccess.query(check_sql, [user_id])
+            if check_result:
+                raise BadRequest(f'user_id "{user_id}" 已存在，無法重複新增')
+
             # 驗證 role
             valid_roles = ["Admin", "Super User", "General User"]
             if isinstance(role, list):
