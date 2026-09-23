@@ -143,6 +143,11 @@ class Account(object):
                 if role not in valid_roles:
                     raise BadRequest(f'角色 "{role}" 無效，只能是 Admin, Super User, General User')
 
+            # 驗證 role JSON 字符串長度（數據庫限制 varchar(20)）
+            role_json = json.dumps(role) if isinstance(role, list) else json.dumps([role])
+            if len(role_json) > 20:
+                raise BadRequest(f'角色數量或名稱過長。您輸入的 JSON 字符串長度為 {len(role_json)}, 超過限制 (最多 20 字符)。建議改用單個角色，或聯繫系統管理員擴大資料庫欄位')
+
             # 驗證 email 格式
             if not email.endswith('@gmail.com'):
                 if '@' in email:

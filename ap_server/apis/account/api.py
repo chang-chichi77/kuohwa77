@@ -49,7 +49,9 @@ class GetAccountList(CustomResource):
         limit = request.args.get('limit', 10, type=int)
         return Account.get_account_list(page=page, limit=limit)
 
-################# 3. 新增帳號 #################
+#======================================================================
+#==========                    3.新增帳號                     ==========
+#======================================================================
 @api.route("/add")
 class AddAccount(CustomResource):
     @api.expect(add_account_input)
