@@ -2,40 +2,87 @@ from apis.account.model import *
 from apis.account.module import *
 from flask import session, request
 from base_api import CustomResource
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, HTTPException
 import json
 
-ROLE_ADMIN = "Admin"
-
-def get_json_data(): #定義函數以及文件說明
-    """通用 JSON 提取方法，兼容任何 Content-Type""" #給他基本定義
-    data = {} #一開始先初始化字典，用來存放最後的結果。
-    if api.payload: #如果flask-restx的payload直接用它，這是用來自動分析的json。
-        data = api.payload #用Flask-RESTx框架的工具發送請求，這是框架的自動分析，最可靠，可以用postman或Swagger UI發送請求。
-    elif request.json: #如果沒有payload，就嘗試flask內建的request.json。
-        data = request.json #標準的HTTP客戶端，API可能被不同客戶調用，像是Web前端貨其他服務等（JavaSccript-fetch()、Python-requesrs）。
-    else: #以防萬一後面都錯誤，可以測試這個。
-        try: #為了不讓應用崩潰
-            data = json.loads(request.data.decode('utf-8')) if request.data else {} #decode('utf-8')是轉換為字串
+# 定義函數以及文件說明
+def get_json_data(): 
+    # 給他基本定義
+    """通用 JSON 提取方法，兼容任何 Content-Type""" 
+    # 初始化空字典，用來存放最終解析出來的 JSON 資料。
+    data = {}
+    # 優先嘗試 Flask-RESTx 的 api.payload
+    # 當使用 Swagger UI 或標準 POST 請求時，框架會自動解析 Body 並儲存在 api.payload
+    if api.payload: 
+        data = api.payload
+    # 若無 payload，退而嘗試 Flask 原生的 request.json
+    # 適用於其他標準 HTTP 客戶端（如前端 fetch/axios 或 Python requests）
+    elif request.json:
+        data = request.json 
+    # 若上述皆未提及到，最後嘗試強行手動解析原始請求內容（request.data）
+    else: 
+        # 開啟異常處理區塊
+        try:
+            # 如果 request.data 裡面有資料 (不是空的)，網路傳過來的原始位元組（Byte）。
+            if request.data:
+                # 將 Bytes 解碼轉換為 Unicode 字串（String）
+                data = json.loads(request.data.decode('utf-8'))
+            # 如果 request.data 是空的
+            else:
+                # 給予空字典保底
+                data = {}
         except:
-            data = {} #如果有任何錯誤，格式不對或空值，就返回空字典。
-    return data #最後返回解析出來的字典
+            # 若格式非合法 JSON 或解碼失敗，為避免程式崩潰，捕捉異常並歸零為空字串。
+            data = {} 
+    # 回傳最終解析出的 JSON 資料字典
+    return data 
 
-################# 1. 帳號登入 #################
+#======================================================================
+#==========                  1. 帳號登入（完成）                ==========
+#======================================================================
+
+# 設定 API 路由路徑，搭配 Namespace 前綴，完整路徑為 /account/login
 @api.route("/login")
+# CustomResource 是本來就有的，Login是命名。
 class Login(CustomResource):
+    # Swagger 文件標注：宣告此 API 預期接收的 JSON Payload 結構（輸入規格）
+    # except 是本來就有的
     @api.expect(account_input_payload)
+    # Swagger 文件標注與回應過濾：定義並自動格式化回傳給前端的 JSON 結構（輸出規格）
+    # marshal_with 是本來就有的
     @api.marshal_with(account_output_payload)
-    def post(self):
-        """帳號登入"""
-        session["roles"] = [ROLE_ADMIN]
-        data = get_json_data()
-        return Account.login(
-            user=data.get("user"),
-            password=data.get("password")
-        )
 
-################# 2. 獲取帳號列表 #################
+    # 代表 HTTP 的 POST 請求動作
+    def post(self):
+        # 文件字串，也算是這隻 API 的摘要說明。
+        """帳號登入"""
+        # 去前端發送過來的 Request 裡面，把我填寫的 JSON 資料解析並且抓出來。
+        data = get_json_data()
+        # 開啟異常處理區塊
+        try:
+            # 呼叫 Account 模組的靜態方法 login 進行帳密驗證
+            # email:取出前端 JSON 資料中的 "user" 欄位值
+            # password:取出前端 JSON 資料中的 "password" 欄位值
+            result = Account.login(
+                email=data.get("user"),
+                password=data.get("password")
+            )
+        # 捕捉從模組拋出的 HTTP 異常
+        except HTTPException as e:
+            # 回傳格式化的失敗訊息 JSON 物件，以及對應的 HTTP 狀態碼 (例如 401 或 500)。
+            return {"result": 1, "message": e.description}, e.code
+        # 判斷驗證結果：當 result 狀態碼為 0 時代表帳號密碼驗證成功
+        if result["result"] == 0:
+            # 將從資料庫動態查詢到的角色清單 (List) 寫入伺服器的 Session 中
+            # 用於後續其他 API 進行使用者權限與身份驗證，避免權限寫死。
+            session["roles"] = result["role"]
+        # 回傳登入成功的結果字典，Flask-RESTx 會自動將其轉為 JSON 並套用 account_output_payload 格式。
+        return result
+
+#======================================================================
+#==========                 2. 獲取帳號列表                    ==========
+#======================================================================
+
 @api.route("/list")
 class GetAccountList(CustomResource):
     @api.doc(params={
@@ -73,7 +120,10 @@ class AddAccount(CustomResource):
                 'message': str(e.description)
             }, 400
 
-################# 4. 更新帳號 #################
+#======================================================================
+#==========                     4. 更新帳號                   ==========
+#======================================================================
+
 @api.route("/update")
 class UpdateAccount(CustomResource):
     @api.expect(update_account_input)
@@ -89,7 +139,10 @@ class UpdateAccount(CustomResource):
             update_data=update_data
         )
 
-################# 5. 刪除帳號 #################
+#======================================================================
+#==========                     5. 刪除帳號                   ==========
+#======================================================================
+
 @api.route("/delete")
 class DeleteAccount(CustomResource):
     @api.expect(delete_account_input)
@@ -99,7 +152,11 @@ class DeleteAccount(CustomResource):
         data = get_json_data()
         return Account.delete_account(user_id=data.get('user_id'))
 
-################# 6. 忘記密碼 #################
+
+#======================================================================
+#==========                     6. 忘記密碼                   ==========
+#======================================================================
+
 @api.route("/forget")
 class ForgetPassword(CustomResource):
     @api.expect(forget_password_input)
