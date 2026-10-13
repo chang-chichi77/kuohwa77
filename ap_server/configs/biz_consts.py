@@ -1,3 +1,4 @@
+# 本來就有，不用改（共11行）
 
 ROLE_ADMIN = 'ADMIN'
 ROLE_SUPER_USER = 'SUPER_USER'

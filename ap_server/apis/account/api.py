@@ -7,19 +7,19 @@ import json
 
 ROLE_ADMIN = "Admin"
 
-def get_json_data():
-    """通用 JSON 提取方法，兼容任何 Content-Type"""
-    data = {}
-    if api.payload:
-        data = api.payload
-    elif request.json:
-        data = request.json
-    else:
-        try:
-            data = json.loads(request.data.decode('utf-8')) if request.data else {}
+def get_json_data(): #定義函數以及文件說明
+    """通用 JSON 提取方法，兼容任何 Content-Type""" #給他基本定義
+    data = {} #一開始先初始化字典，用來存放最後的結果。
+    if api.payload: #如果flask-restx的payload直接用它，這是用來自動分析的json。
+        data = api.payload #用Flask-RESTx框架的工具發送請求，這是框架的自動分析，最可靠，可以用postman或Swagger UI發送請求。
+    elif request.json: #如果沒有payload，就嘗試flask內建的request.json。
+        data = request.json #標準的HTTP客戶端，API可能被不同客戶調用，像是Web前端貨其他服務等（JavaSccript-fetch()、Python-requesrs）。
+    else: #以防萬一後面都錯誤，可以測試這個。
+        try: #為了不讓應用崩潰
+            data = json.loads(request.data.decode('utf-8')) if request.data else {} #decode('utf-8')是轉換為字串
         except:
-            data = {}
-    return data
+            data = {} #如果有任何錯誤，格式不對或空值，就返回空字典。
+    return data #最後返回解析出來的字典
 
 ################# 1. 帳號登入 #################
 @api.route("/login")
@@ -52,6 +52,7 @@ class GetAccountList(CustomResource):
 #======================================================================
 #==========                    3.新增帳號                     ==========
 #======================================================================
+
 @api.route("/add")
 class AddAccount(CustomResource):
     @api.expect(add_account_input)

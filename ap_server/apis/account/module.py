@@ -101,7 +101,6 @@ class Account(object):
                 'message': f'獲取列表失敗: {str(e)}',
                 'data': []
             }
-
 #======================================================================
 #==========                    2.新增帳號                     ==========
 #======================================================================
@@ -155,9 +154,17 @@ class Account(object):
                 raise BadRequest('email 格式錯誤，@ 前面必須至少有一個字符 (例如: chichi@gmail.com)')
 
             # 角色转换为 JSON 字符串
-            role_str = json.dumps(role) if isinstance(role, list) else json.dumps([role])
+            if isinstance(role, list):
+                # 如果是列表，直接轉成 JSON 字符串
+                role_str = json.dumps(role)
+                print(role_str)
+                # 輸出："["Admin", "Super User"]"
+            else:
+                # 如果不是列表，先包裝成列表，再轉成 JSON 字符串
+                role_str = json.dumps([role])
+                print(role_str)
 
-            sql = """
+            sql = """ #insert寫入資料
                 INSERT INTO TBL_USER_ACCOUNT (USER_ID, ROLE, EMAIL, PASSWORD, UPDATE_TIME)
                 VALUES (%s, %s, %s, %s, NOW())
             """
