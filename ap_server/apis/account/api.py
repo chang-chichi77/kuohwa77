@@ -2,7 +2,7 @@ from apis.account.model import *
 from apis.account.module import *
 from flask import session, request
 from base_api import CustomResource
-from werkzeug.exceptions import BadRequest, HTTPException
+from werkzeug.exceptions import HTTPException
 import json
 
 # 定義函數以及文件說明
@@ -32,10 +32,11 @@ def get_json_data():
                 # 給予空字典保底
                 data = {}
         except:
-            # 若格式非合法 JSON 或解碼失敗，為避免程式崩潰，捕捉異常並歸零為空字串。
+            # 若格式非合法 JSON 或解碼失敗，為避免程式崩潰，捕捉異常並歸零為空字典。
             data = {} 
     # 回傳最終解析出的 JSON 資料字典
-    return data 
+    # 請求內容必須是 JSON 物件，如果是陣列、數字等其他型態（例如 [1,2]）就當作空的，後面會回 400，不會讓程式出錯
+    return data if isinstance(data, dict) else {} 
 
 #======================================================================
 #==========                  1. 帳號登入（完成）                ==========
@@ -51,7 +52,6 @@ class Login(CustomResource):
     # Swagger 文件標注與回應過濾：定義並自動格式化回傳給前端的 JSON 結構（輸出規格）
     # marshal_with 是本來就有的
     @api.marshal_with(account_output_payload)
-
     # 代表 HTTP 的 POST 請求動作
     def post(self):
         # 文件字串，也算是這隻 API 的摘要說明。
@@ -107,28 +107,43 @@ class GetAccountList(CustomResource):
             return {"result": 1, "message": e.description}, e.code
 
 #======================================================================
-#==========                    3.新增帳號                     ==========
+#==========                  3.新增帳號（完成）                 ==========
 #======================================================================
 
+# 設定 API 路由路徑，搭配 Namespace 前綴，完整路徑為 /account/add。
 @api.route("/add")
-class AddAccount(CustomResource):
-    @api.expect(add_account_input)
+# CustomResource 是本來就有的，AddAccountList是命名。
+class AddAccountList(CustomResource):
+    # Swagger 文件標注：宣告此 API 預期接收的 JSON Payload 結構（輸入規格）
+    # expect 是本來就有的
+    @api.expect(add_account_list_input)
+    # Swagger 文件標注與回應過濾：定義並自動格式化回傳給前端的 JSON 結構（輸出規格）
+    # marshal_with 是本來就有的
+    @api.marshal_with(add_account_list_output)
+    # 代表 HTTP 的 POST 請求動作
     def post(self):
+        # 文件字串，也算是這隻 API 的摘要說明。
+        # 去前端發送過來的 Request 裡面，把我填寫的 JSON 資料解析並且抓出來。
         """新增帳號"""
+        # 開啟異常處理區塊，用來捕捉執行過程中可能發生的錯誤 (如 400 驗證失敗或 500 寄信/資料庫錯誤)        
         try:
-            data=get_json_data()
-            result = Account.add_account(
+        # 呼叫通用工具函式 get_json_data()，將前端發送過來的 HTTP Request Body 內容解析並提取為字典 (data)。    
+            data = get_json_data()
+            # 呼叫 Account 模組的靜態方法執行新增帳號作業 (注意：此處依據模組定義應為 Account.add_account)
+            # 透過 .get('key') 從 data 字典中安全提取前端帶入的欄位，對接至後端 Module 的參數名稱。
+            return Account.add_account_list(
                 user_id=data.get('user_id'),
-                role=data.get('role', []),
-                email=data.get('email'),
-                password=data.get('password')
+                role=data.get('role'),
+                email=data.get('email')
             )
-            return result, 200
-        except BadRequest as e:
-            return {
-                'result': 1,
-                'message': str(e.description)
-            }, 400
+        # 捕捉模組層拋出的 HTTP 異常
+        except HTTPException as e:
+            # 當 user_id/email 重複、格式不符時：捕捉到 400 BadRequest
+            # 當寄送信件失敗或 SQL 執行異常時：捕捉到 500 InternalServerError
+            # e.code ➔ HTTP 狀態碼 (HTTP Status Code)
+            # e.description 的內容是："user_id "chichi" 已存在，無法重複新增"
+            # e 是 「Exception（異常/錯誤）」 這個單字的英文縮寫
+            return {'result': 1, 'message': e.description}, e.code
 
 #======================================================================
 #==========                     4. 更新帳號                   ==========

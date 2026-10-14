@@ -6,7 +6,7 @@ from flask_restplus import Namespace, Resource, fields, model
 # u代表這個字串包含中文或其他非英文字元，請用Unicode解碼，不要出現亂碼，因為一班字串只支援英文及數字（ASCII）。
 api = Namespace("account", description=u"帳號及權限管理")
 
-#  api.model 定義通用的 JSON 回應格式類型（Data MOdel）
+# api.model 定義通用的 JSON 回應格式類型（Data MOdel）
 # 用於 Swagger 文件渲染與回應格式驗證
 # u代表這個字串包含中文或其他非英文字元，請用Unicode解碼，不要出現亂碼，因為一班字串只支援英文及數字（ASCII）。
 base_input_payload = api.model(u"基礎輸入參數定義", {
@@ -23,6 +23,7 @@ base_input_payload = api.model(u"基礎輸入參數定義", {
 
 # 使用 api.model 定義一個名為"帳號登入輸入"的 JSON 格式規格。
 # u代表這個字串包含中文或其他非英文字元，請用Unicode解碼，不要出現亂碼，因為一班字串只支援英文及數字（ASCII）。
+# description:在 Swagger API 文件頁面上顯示的模組中文說明
 account_input_payload = api.model(u"帳號登入輸入", {
     # fields.String為字串型態，必填欄位，也寫了一個範例。
     "user": fields.String(required=True, description=u"登入信箱", example="itri@kuohwa.com"),
@@ -59,17 +60,25 @@ get_account_list_output = api.clone(u"獲得帳號列表輸出", base_input_payl
 })
 
 #======================================================================
-#==========                    3.新增帳號                     ==========
+#==========                    3.新增帳號（完成                 ==========
 #======================================================================
 
-add_account_input = api.model("新增帳號輸入", {
-    'user_id': fields.String(required=True, description=u"用戶ID", example="chichi"),
-    'role': fields.List(fields.String(), required=True, description=u"角色列表 (可包含一個或多個角色，只能是 Admin / Super user / General user。例如:['Admin'] 或 ['Admin', 'Super user'])", example=["Admin"]),
-    'email': fields.String(required=True, description=u"信箱 (必須以 @gmail.com 結尾)", example="jolin20060131@gmail.com"),
-    'password': fields.String(required=True, description=u"密碼 (前端先經過 SHA1 hash 的 40 字元字串)", example="d2bed8c8516662bf2f4bc934bc2ffa5aa1ffeab5")
+# 使用 api.model 定義一個名為"新增帳號輸入"的 JSON 格式規格。
+# u代表這個字串包含中文或其他非英文字元，請用Unicode解碼，不要出現亂碼，因為一班字串只支援英文及數字（ASCII）。
+# 代表帳號清單中，每一個使用者物件包含的欄位資訊。
+# description:在 Swagger API 文件頁面上顯示的模組中文說明
+add_account_list_input = api.model(u"新增帳號輸入", {
+    # "user_id": 使用者帳號 ID 為字串型態，必填，Swagger 顯示欄位說明與範例資料。
+    "user_id": fields.String(required=True, description=u"用戶ID", example="chichi"),
+    # "role": 權限角色清單為字串陣列/清單型態，必填，限制僅能輸入指定的幾種角色名稱。
+    # fields.String()有加這個括號才能製造出一個真正的欄位驗證器工具
+    "role": fields.List(fields.String(), required=True, description=u"角色列表 (可包含一個或多個角色，只能是 Admin / Super user / General user。例如:['Admin'] 或 ['Admin', 'Super user'])", example=["Admin"]),
+    # "email": 電子信箱 為字串型態，必填，系統會將自動發送的臨時密碼寄至此信箱。
+    "email": fields.String(required=True, description=u"信箱 (系統會把臨時密碼寄到這個信箱)", example="itri@kuohwa.com")
 })
 
-add_account_output = base_input_payload
+# 指定「新增帳號」API 的後端輸出格式為全域共用的基礎回應模型 (包含 result 與 message)
+add_account_list_output = base_input_payload
 
 #======================================================================
 #==========                     4. 更新帳號                   ==========
