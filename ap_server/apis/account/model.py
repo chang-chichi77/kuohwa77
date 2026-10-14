@@ -18,7 +18,7 @@ base_input_payload = api.model(u"基礎輸入參數定義", {
 })
 
 #======================================================================
-#==========                   1. 帳號登入（完成）               ==========
+#==========                  1. 帳號登入（完成）                ==========
 #======================================================================
 
 # 使用 api.model 定義一個名為"帳號登入輸入"的 JSON 格式規格。
@@ -33,18 +33,29 @@ account_input_payload = api.model(u"帳號登入輸入", {
 account_output_payload = base_input_payload
 
 #======================================================================
-#==========                 2. 獲取帳號列表                    ==========
+#==========                  2. 獲取帳號列表（完成）            ==========
 #======================================================================
 
-account_item = api.model("帳號項", {
-    'user_id': fields.String(),
-    'role': fields.List(fields.String()),
-    'email': fields.String(),
-    'update_time': fields.String()
+# 使用 api.model 定義一個名為"帳號項"的 JSON 格式規格。
+# u代表這個字串包含中文或其他非英文字元，請用Unicode解碼，不要出現亂碼，因為一班字串只支援英文及數字（ASCII）。
+# 代表帳號清單中，每一個使用者物件包含的欄位資訊。
+get_account_list_input = api.model(u"帳號項", {
+    # 使用者帳號 ID 是字串型態
+    "user_id": fields.String(),
+    # 角色權限清單（字串陣列/清單型態），如 （["Admin", "User"])。
+    "role": fields.List(fields.String()),
+    # 電子郵件是字串型態
+    "email": fields.String(),
+    # 資料更新時間是字串型態態，通常為格式化後的日期字串，如 "2026-10-14 12:00:00"。
+    "update_time": fields.String()
 })
 
-get_account_list_output = api.clone(u'獲得帳號列表輸出', base_input_payload, {
-    'data': fields.List(fields.Nested(account_item))
+# 複製擴充基礎輸出模型，建立帳號列表的 API 輸出規格。
+# api.clone（新模型名稱, 被繼承的基礎模型, 要額外新增或覆蓋的欄位）
+get_account_list_output = api.clone(u"獲得帳號列表輸出", base_input_payload, {
+    # 在原本的 (result, message) 基礎上，額外擴充一個 "data" 欄位。
+    # fields.Nested(account_item)：代表 data 是一個清單 (List)，且裡面的每個元素都必須符合 get_account_list_input 模型。
+    "data": fields.List(fields.Nested(get_account_list_input))
 })
 
 #======================================================================
@@ -53,7 +64,7 @@ get_account_list_output = api.clone(u'獲得帳號列表輸出', base_input_payl
 
 add_account_input = api.model("新增帳號輸入", {
     'user_id': fields.String(required=True, description=u"用戶ID", example="chichi"),
-    'role': fields.List(fields.String(), required=True, description=u"角色列表 (可包含一個或多個角色，只能是 Admin / Super User / General User。例如:['Admin'] 或 ['Admin', 'Super User'])", example=["Admin"]),
+    'role': fields.List(fields.String(), required=True, description=u"角色列表 (可包含一個或多個角色，只能是 Admin / Super user / General user。例如:['Admin'] 或 ['Admin', 'Super user'])", example=["Admin"]),
     'email': fields.String(required=True, description=u"信箱 (必須以 @gmail.com 結尾)", example="jolin20060131@gmail.com"),
     'password': fields.String(required=True, description=u"密碼 (前端先經過 SHA1 hash 的 40 字元字串)", example="d2bed8c8516662bf2f4bc934bc2ffa5aa1ffeab5")
 })

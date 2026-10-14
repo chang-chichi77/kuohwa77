@@ -41,7 +41,7 @@ def get_json_data():
 #==========                  1. 帳號登入（完成）                ==========
 #======================================================================
 
-# 設定 API 路由路徑，搭配 Namespace 前綴，完整路徑為 /account/login
+# 設定 API 路由路徑，搭配 Namespace 前綴，完整路徑為 /account/login。
 @api.route("/login")
 # CustomResource 是本來就有的，Login是命名。
 class Login(CustomResource):
@@ -80,21 +80,31 @@ class Login(CustomResource):
         return result
 
 #======================================================================
-#==========                 2. 獲取帳號列表                    ==========
+#==========                 2. 獲取帳號列表（完成）              ==========
 #======================================================================
 
+# 設定 API 路由路徑，搭配 Namespace 前綴，完整路徑為 /account/list。
 @api.route("/list")
+# CustomResource 是本來就有的，GetAccountList是命名。
 class GetAccountList(CustomResource):
-    @api.doc(params={
-        'page': '頁碼 (預設 1)',
-        'limit': '每頁筆數 (預設 10)'
-    })
+    # Swagger 文件標註：在測試網頁上顯示參數說明與預設行為。
+    @api.doc(params={'page': "頁碼 (預設 1,每頁固定 10 筆，必須是整數)"})
+    # Swagger 文件標註與回應過濾：定義並自動將回傳字典轉為 get_account_list_output 格式。
     @api.marshal_with(get_account_list_output)
+    # 代表 HTTP 的 GET 請求動作
     def get(self):
+        # 文件字串，也算是這隻 API 的摘要說明。
         """獲取帳號列表"""
-        page = request.args.get('page', 1, type=int)
-        limit = request.args.get('limit', 10, type=int)
-        return Account.get_account_list(page=page, limit=limit)
+        # 不在這裡轉成整數，因為 type=int 轉失敗時會偷偷改用預設值 1，所以原始值交給 module 判斷。
+        page = request.args.get("page", 1)
+        # 開啟異常處理區塊
+        try:
+            # 呼叫 Account 模組的靜態方法，傳入 page 執行分頁查詢。
+            return Account.get_account_list(page=page)
+        # 捕捉模組層拋出的 HTTP 異常 (頁碼格式錯誤的 400，或資料庫異常的 500)
+        except HTTPException as e:
+            # 回傳格式化的失敗 JSON 物件，以及對應的 HTTP 狀態碼。
+            return {"result": 1, "message": e.description}, e.code
 
 #======================================================================
 #==========                    3.新增帳號                     ==========
